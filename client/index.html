@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NetTool BLE Client Demo</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            line-height: 1.6;
+            color: #333;
+        }
+        
+        h1, h2 {
+            color: #2c3e50;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        
+        .card {
+            background: #fff;
+            border-radius: 5px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        
+        button {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            margin-right: 10px;
+            transition: background-color 0.3s;
+        }
+        
+        button:hover {
+            background-color: #2980b9;
+        }
+        
+        button:disabled {
+            background-color: #95a5a6;
+            cursor: not-allowed;
+        }
+        
+        .status {
+            padding: 10px;
+            border-radius: 4px;
+            margin-top: 10px;
+        }
+        
+        .success {
+            background-color: #d5f5e3;
+            color: #27ae60;
+        }
+        
+        .error {
+            background-color: #f8d7da;
+            color: #c0392b;
+        }
+        
+        .info {
+            background-color: #d6eaf8;
+            color: #2980b9;
+        }
+        
+        .response {
+            white-space: pre-wrap;
+            background-color: #f9f9f9;
+            padding: 15px;
+            border-radius: 4px;
+            border: 1px solid #ddd;
+            overflow: auto;
+            max-height: 300px;
+        }
+        
+        input, select {
+            width: 100%;
+            padding: 8px;
+            margin-bottom: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        
+        .form-group {
+            margin-bottom: 15px;
+        }
+        
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>NetTool BLE Client Demo</h1>
+        
+        <div class="card">
+            <h2>Connection</h2>
+            <div class="form-group">
+                <label for="deviceName">Device Name:</label>
+                <input type="text" id="deviceName" value="NetTool" placeholder="NetTool">
+            </div>
+            <button id="connectBtn">Connect to Device</button>
+            <button id="disconnectBtn" disabled>Disconnect</button>
+            <div id="connectionStatus" class="status info">Not connected</div>
+        </div>
+        
+        <div class="card" id="requestCard" style="display: none;">
+            <h2>Make HTTP Request</h2>
+            <div class="form-group">
+                <label for="method">Method:</label>
+                <select id="method">
+                    <option value="GET">GET</option>
+                    <option value="POST">POST</option>
+                    <option value="PUT">PUT</option>
+                    <option value="DELETE">DELETE</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="path">Path:</label>
+                <input type="text" id="path" value="/" placeholder="/">
+            </div>
+            <div class="form-group">
+                <label for="body">Body (JSON):</label>
+                <textarea id="body" rows="4" style="width: 100%;"></textarea>
+            </div>
+            <button id="sendBtn">Send Request</button>
+            <div id="requestStatus" class="status hidden"></div>
+        </div>
+        
+        <div class="card" id="responseCard" style="display: none;">
+            <h2>Response</h2>
+            <div class="form-group">
+                <strong>Status:</strong> <span id="responseStatus"></span>
+            </div>
+            <div class="form-group">
+                <strong>Headers:</strong>
+                <pre id="responseHeaders" class="response"></pre>
+            </div>
+            <div class="form-group">
+                <strong>Body:</strong>
+                <pre id="responseBody" class="response"></pre>
+            </div>
+        </div>
+    </div>
+    
+    <script src="nettool-ble-client.js"></script>
+    <script>
+        // Initialize the BLE client
+        const bleClient = new NetToolBLEClient();
+        
+        // DOM elements
+        const connectBtn = document.getElementById('connectBtn');
+        const disconnectBtn = document.getElementById('disconnectBtn');
+        const connectionStatus = document.getElementById('connectionStatus');
+        const requestCard = document.getElementById('requestCard');
+        const responseCard = document.getElementById('responseCard');
+        const deviceNameInput = document.getElementById('deviceName');
+        const methodSelect = document.getElementById('method');
+        const pathInput = document.getElementById('path');
+        const bodyTextarea = document.getElementById('body');
+        const sendBtn = document.getElementById('sendBtn');
+        const requestStatus = document.getElementById('requestStatus');
+        const responseStatus = document.getElementById('responseStatus');
+        const responseHeaders = document.getElementById('responseHeaders');
+        const responseBody = document.getElementById('responseBody');
+        
+        // Connect button handler
+        connectBtn.addEventListener('click', async () => {
+            try {
+                connectionStatus.className = 'status info';
+                connectionStatus.textContent = 'Connecting...';
+                
+                await bleClient.connect({
+                    deviceName: deviceNameInput.value,
+                    onDisconnect: () => {
+                        connectionStatus.className = 'status error';
+                        connectionStatus.textContent = 'Disconnected';
+                        connectBtn.disabled = false;
+                        disconnectBtn.disabled = true;
+                        requestCard.style.display = 'none';
+                        responseCard.style.display = 'none';
+                    }
+                });
+                
+                connectionStatus.className = 'status success';
+                connectionStatus.textContent = 'Connected';
+                connectBtn.disabled = true;
+                disconnectBtn.disabled = false;
+                requestCard.style.display = 'block';
+            } catch (error) {
+                connectionStatus.className = 'status error';
+                connectionStatus.textContent = `Connection failed: ${error.message}`;
+                connectBtn.disabled = false;
+                disconnectBtn.disabled = true;
+            }
+        });
+        
+        // Disconnect button handler
+        disconnectBtn.addEventListener('click', () => {
+            bleClient.disconnect();
+            connectionStatus.className = 'status info';
+            connectionStatus.textContent = 'Disconnected';
+            connectBtn.disabled = false;
+            disconnectBtn.disabled = true;
+            requestCard.style.display = 'none';
+            responseCard.style.display = 'none';
+        });
+        
+        // Send request button handler
+        sendBtn.addEventListener('click', async () => {
+            if (!bleClient.isConnected()) {
+                requestStatus.className = 'status error';
+                requestStatus.textContent = 'Not connected to a device';
+                return;
+            }
+            
+            requestStatus.className = 'status info';
+            requestStatus.textContent = 'Sending request...';
+            requestStatus.style.display = 'block';
+            responseCard.style.display = 'none';
+            sendBtn.disabled = true;
+            
+            try {
+                const method = methodSelect.value;
+                const path = pathInput.value;
+                let body = null;
+                
+                if (bodyTextarea.value.trim()) {
+                    try {
+                        body = JSON.parse(bodyTextarea.value);
+                    } catch (e) {
+                        requestStatus.className = 'status error';
+                        requestStatus.textContent = 'Invalid JSON in body';
+                        sendBtn.disabled = false;
+                        return;
+                    }
+                }
+                
+                const options = {
+                    method: method,
+                    headers: {
+                        'Accept': 'application/json, text/html, */*',
+                        'Content-Type': 'application/json'
+                    }
+                };
+                
+                if (body) {
+                    options.body = body;
+                }
+                
+                const response = await bleClient.fetch(path, options);
+                
+                // Display response
+                responseStatus.textContent = `${response.status} ${response.statusText}`;
+                
+                // Display headers
+                let headersText = '';
+                for (const [key, value] of Object.entries(response.headers)) {
+                    headersText += `${key}: ${value}\n`;
+                }
+                responseHeaders.textContent = headersText;
+                
+                // Display body
+                try {
+                    const text = await response.text();
+                    try {
+                        // Try to format as JSON
+                        const json = JSON.parse(text);
+                        responseBody.textContent = JSON.stringify(json, null, 2);
+                    } catch {
+                        // Display as text
+                        responseBody.textContent = text;
+                    }
+                } catch (error) {
+                    responseBody.textContent = `[Error reading body: ${error.message}]`;
+                }
+                
+                requestStatus.className = 'status success';
+                requestStatus.textContent = 'Request completed successfully';
+                responseCard.style.display = 'block';
+            } catch (error) {
+                requestStatus.className = 'status error';
+                requestStatus.textContent = `Request failed: ${error.message}`;
+                responseCard.style.display = 'none';
+            } finally {
+                sendBtn.disabled = false;
+            }
+        });
+        
+        // Check if Web Bluetooth API is available
+        if (!navigator.bluetooth) {
+            connectionStatus.className = 'status error';
+            connectionStatus.textContent = 'Web Bluetooth API is not available in this browser. Use Chrome, Edge, or Opera.';
+            connectBtn.disabled = true;
+        }
+    </script>
+</body>
+</html>
