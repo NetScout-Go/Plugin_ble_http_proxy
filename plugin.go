@@ -24,6 +24,9 @@ const (
 	// BLE HTTP Response Characteristic
 	BLEHTTPResponseCharUUID = "00001236-0000-1000-8000-00805f9b34fb"
 
+	// BLE Status Characteristic
+	BLEStatusCharUUID = "00001237-0000-1000-8000-00805f9b34fb"
+
 	// Maximum size for BLE attribute value (MTU - 3)
 	MaxBLEAttributeSize = 509
 
@@ -55,8 +58,8 @@ var Plugin struct {
 func init() {
 	// Initialize the Plugin variable
 	Plugin.ID = "ble_http_proxy"
-	Plugin.Name = "BLE HTTP Proxy"
-	Plugin.Description = "Allows phones and PCs to connect to the dashboard via Bluetooth Low Energy"
+	Plugin.Name = "Bluetooth Dashboard Access"
+	Plugin.Description = "Allows devices to connect to the NetTool dashboard via Bluetooth Low Energy"
 	Plugin.Version = "1.0.0"
 	Plugin.Author = "NetScout-Go Team"
 	Plugin.Execute = executePlugin
@@ -66,7 +69,7 @@ func init() {
 func executePlugin(params map[string]interface{}) (interface{}, error) {
 	// Extract parameters
 	deviceName := "NetTool"
-	if name, ok := params["deviceName"].(string); ok && name != "" {
+	if name, ok := params["device_name"].(string); ok && name != "" {
 		deviceName = name
 	}
 
@@ -126,7 +129,7 @@ func executePlugin(params map[string]interface{}) (interface{}, error) {
 		}
 
 	default:
-		return nil, fmt.Errorf("invalid action: %s", action)
+		result["message"] = fmt.Sprintf("Unknown action: %s", action)
 	}
 
 	return result, nil

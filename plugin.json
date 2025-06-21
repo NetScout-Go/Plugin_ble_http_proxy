@@ -1,37 +1,48 @@
 {
-    "id": "ble_http_proxy",
-    "name": "BLE HTTP Proxy",
-    "description": "Allows phones and PCs to connect to the dashboard via Bluetooth Low Energy",
-    "version": "1.0.0",
-    "author": "NetScout-Go Team",
-    "category": "connectivity",
-    "icon": "bluetooth",
-    "requiresRoot": true,
-    "parameters": [
+  "id": "ble_http_proxy",
+  "name": "Bluetooth Dashboard Access",
+  "description": "Allows devices to connect to the NetTool dashboard via Bluetooth Low Energy (BLE)",
+  "icon": "bluetooth",
+  "parameters": [
+    {
+      "id": "device_name",
+      "name": "Device Name",
+      "description": "The Bluetooth device name that will be advertised",
+      "type": "string",
+      "required": false,
+      "default": "NetTool"
+    },
+    {
+      "id": "port",
+      "name": "HTTP Port",
+      "description": "The local HTTP port to proxy over Bluetooth",
+      "type": "number",
+      "required": false,
+      "default": 8080,
+      "min": 1,
+      "max": 65535
+    },
+    {
+      "id": "action",
+      "name": "Action",
+      "description": "The action to perform",
+      "type": "select",
+      "required": true,
+      "default": "start",
+      "options": [
         {
-            "name": "deviceName",
-            "label": "Device Name",
-            "type": "string",
-            "default": "NetTool",
-            "required": false,
-            "description": "The Bluetooth device name that will be advertised"
+          "value": "start",
+          "label": "Start Bluetooth Service"
         },
         {
-            "name": "port",
-            "label": "HTTP Port",
-            "type": "number",
-            "default": 8080,
-            "required": false,
-            "description": "The local HTTP port to proxy"
+          "value": "stop",
+          "label": "Stop Bluetooth Service"
         },
         {
-            "name": "action",
-            "label": "Action",
-            "type": "select",
-            "options": ["start", "stop", "status"],
-            "default": "start",
-            "required": true,
-            "description": "Action to perform with the BLE proxy"
+          "value": "status",
+          "label": "Check Service Status"
         }
-    ]
+      ]
+    }
+  ]
 }
